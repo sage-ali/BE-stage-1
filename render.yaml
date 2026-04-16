@@ -1,0 +1,14 @@
+services:
+  - type: web
+    name: hng-14-be-stage-0
+    env: node
+    buildCommand: npm install && npm run build
+    startCommand: npm start
+    plan: free # Or hobby, starter, etc.
+    autoDeploy: true
+    healthCheckPath: /health
+    envVars:
+      - key: PORT
+        value: "3000" # Example, Render will also inject its own PORT
+      - key: NODE_VERSION
+        value: "18.x" # Matching a recommended Node.js version
