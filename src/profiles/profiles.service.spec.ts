@@ -5,6 +5,8 @@ import { ProfilesService } from './profiles.service';
 import { PrismaService } from '../prisma/prisma.service';
 import { AxiosResponse, InternalAxiosRequestConfig, AxiosHeaders } from 'axios';
 import { vi, describe, it, expect, beforeEach, MockInstance } from 'vitest';
+import { Logger } from 'nestjs-pino';
+import { HttpException } from '@nestjs/common';
 
 describe('ProfilesService', () => {
   let service: ProfilesService;
@@ -41,6 +43,12 @@ describe('ProfilesService', () => {
               count: vi.fn(),
               delete: vi.fn(),
             },
+          },
+        },
+        {
+          provide: Logger,
+          useValue: {
+            error: vi.fn(),
           },
         },
       ],
@@ -379,9 +387,16 @@ describe('ProfilesService', () => {
           ),
         );
 
-      await expect(service.enrichProfile('test')).rejects.toThrow(
-        /Genderize returned an invalid response/,
-      );
+      try {
+        await service.enrichProfile('test');
+        expect.fail('Should have thrown 502');
+      } catch (error) {
+        expect(error).toBeInstanceOf(HttpException);
+        expect((error as HttpException).getStatus()).toBe(502);
+        expect((error as HttpException).message).toMatch(
+          /Genderize returned an invalid response/,
+        );
+      }
     });
 
     it('should throw 502 if Agify age is null', async () => {
@@ -399,9 +414,16 @@ describe('ProfilesService', () => {
           ),
         );
 
-      await expect(service.enrichProfile('test')).rejects.toThrow(
-        /Agify returned an invalid response/,
-      );
+      try {
+        await service.enrichProfile('test');
+        expect.fail('Should have thrown 502');
+      } catch (error) {
+        expect(error).toBeInstanceOf(HttpException);
+        expect((error as HttpException).getStatus()).toBe(502);
+        expect((error as HttpException).message).toMatch(
+          /Agify returned an invalid response/,
+        );
+      }
     });
 
     it('should throw 502 if Nationalize country list is empty', async () => {
@@ -412,14 +434,25 @@ describe('ProfilesService', () => {
         .mockReturnValueOnce(of(mockAxiosResponse({ age: 42 })))
         .mockReturnValueOnce(of(mockAxiosResponse({ country: [] })));
 
-      await expect(service.enrichProfile('test')).rejects.toThrow(
-        /Nationalize returned an invalid response/,
-      );
+      try {
+        await service.enrichProfile('test');
+        expect.fail('Should have thrown 502');
+      } catch (error) {
+        expect(error).toBeInstanceOf(HttpException);
+        expect((error as HttpException).getStatus()).toBe(502);
+        expect((error as HttpException).message).toMatch(
+          /Nationalize returned an invalid response/,
+        );
+      }
     });
 
     it('should assign correct age_group', async () => {
       const cases = [
         { age: 5, group: 'child' },
+        { age: 12, group: 'child' },
+        { age: 13, group: 'teenager' },
+        { age: 19, group: 'teenager' },
+        { age: 20, group: 'adult' },
         { age: 25, group: 'adult' },
         { age: 65, group: 'senior' },
       ];

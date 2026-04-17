@@ -3,6 +3,7 @@ import {
   HttpException,
   HttpStatus,
   NotFoundException,
+  Inject,
 } from '@nestjs/common';
 import { HttpService } from '@nestjs/axios';
 import { firstValueFrom } from 'rxjs';
@@ -16,23 +17,24 @@ import {
 import { HttpsProxyAgent } from 'https-proxy-agent';
 import { uuidv7 } from 'uuidv7';
 import { Prisma } from '@prisma/client';
+import { Logger } from 'nestjs-pino';
 
 // Check it here, outside the class
 const FIXIE_URL = process.env.FIXIE_URL;
-if (!FIXIE_URL) {
-  throw new Error('FIXIE_URL environment variable is not set');
-}
 
 /**
  * Service responsible for managing user profiles, including data enrichment from external APIs.
  */
 @Injectable()
 export class ProfilesService {
-  private readonly proxyAgent = new HttpsProxyAgent(FIXIE_URL);
+  private readonly proxyAgent = FIXIE_URL
+    ? new HttpsProxyAgent(FIXIE_URL)
+    : undefined;
 
   constructor(
     private readonly httpService: HttpService,
     private readonly prisma: PrismaService,
+    @Inject(Logger) private readonly logger: Logger,
   ) {}
 
   /**
@@ -63,21 +65,25 @@ export class ProfilesService {
       if (error instanceof HttpException) {
         throw error;
       }
+      this.logger.error(
+        { err: error instanceof Error ? error : String(error) },
+        'Upstream dependency failure during profile enrichment',
+      );
       throw new HttpException(
-        'Upstream or server failure',
+        'Upstream dependency failure',
         HttpStatus.BAD_GATEWAY,
       );
     }
   }
 
-  private readonly UPSTREAM_TIMEOUT_MS = 3000;
+  private readonly GENDERIZE_API_TIMEOUT_MS = 5000;
 
   private async fetchWithProxy<T>(url: string): Promise<T> {
     const response = await firstValueFrom(
       this.httpService.get<T>(url, {
         httpsAgent: this.proxyAgent,
         proxy: false,
-        timeout: this.UPSTREAM_TIMEOUT_MS,
+        timeout: this.GENDERIZE_API_TIMEOUT_MS,
       }),
     );
     return response.data;
@@ -224,11 +230,7 @@ export class ProfilesService {
     country_id?: string;
     age_group?: string;
   }) {
-    const where: {
-      gender?: string;
-      country_id?: string;
-      age_group?: string;
-    } = {};
+    const where: Prisma.ProfileWhereInput = {};
 
     if (filters.gender) {
       where.gender = filters.gender.toLowerCase();

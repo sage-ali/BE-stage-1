@@ -9,6 +9,7 @@ import {
   HttpCode,
   HttpStatus,
   NotFoundException,
+  BadGatewayException,
 } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiResponse } from '@nestjs/swagger';
 import { ProfilesService } from './profiles.service';
@@ -34,6 +35,7 @@ export class ProfilesController {
    *
    * @param createProfileDto - The data required to create a profile.
    * @returns A promise that resolves to the created or existing profile.
+   * @throws {BadGatewayException} If profile enrichment fails.
    */
   @Post()
   @ApiOperation({
@@ -59,14 +61,32 @@ export class ProfilesController {
   async create(
     @Body() createProfileDto: CreateProfileDto,
   ): Promise<ProfileSuccessResponseDto | ProfileSuccessWithMessageResponseDto> {
-    const result = await this.profilesService.createProfile(
-      createProfileDto.name,
-    );
+    try {
+      const result = await this.profilesService.createProfile(
+        createProfileDto.name,
+      );
 
-    if (result.existing) {
+      if (result.existing) {
+        return {
+          status: 'success',
+          message: 'Profile already exists',
+          data: {
+            id: result.profile.id,
+            name: result.profile.name,
+            gender: result.profile.gender,
+            gender_probability: result.profile.gender_probability,
+            sample_size: result.profile.sample_size,
+            age: result.profile.age,
+            age_group: result.profile.age_group,
+            country_id: result.profile.country_id,
+            country_probability: result.profile.country_probability,
+            created_at: result.profile.created_at,
+          },
+        };
+      }
+
       return {
         status: 'success',
-        message: 'Profile already exists',
         data: {
           id: result.profile.id,
           name: result.profile.name,
@@ -80,23 +100,18 @@ export class ProfilesController {
           created_at: result.profile.created_at,
         },
       };
+    } catch (error) {
+      if (error instanceof BadGatewayException) {
+        throw error;
+      }
+      if (
+        error instanceof Error &&
+        error.message === 'Profile enrichment failed'
+      ) {
+        throw new BadGatewayException('Profile enrichment failed');
+      }
+      throw error;
     }
-
-    return {
-      status: 'success',
-      data: {
-        id: result.profile.id,
-        name: result.profile.name,
-        gender: result.profile.gender,
-        gender_probability: result.profile.gender_probability,
-        sample_size: result.profile.sample_size,
-        age: result.profile.age,
-        age_group: result.profile.age_group,
-        country_id: result.profile.country_id,
-        country_probability: result.profile.country_probability,
-        created_at: result.profile.created_at,
-      },
-    };
   }
 
   /**

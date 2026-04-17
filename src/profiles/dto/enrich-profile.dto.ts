@@ -7,7 +7,7 @@ import { ApiProperty } from '@nestjs/swagger';
 export class EnrichProfileDto {
   /**
    * The first name to enrich.
-   * Must contain only alphabetic characters.
+   * Must contain only letters, hyphens, and apostrophes.
    */
   @ApiProperty({
     description: 'The first name to enrich',
@@ -15,8 +15,8 @@ export class EnrichProfileDto {
   })
   @IsNotEmpty()
   @IsString()
-  @Matches(/^[a-zA-Z]+$/, {
-    message: 'name must contain only alphabetic characters',
+  @Matches(/^[\p{L}'-]+$/u, {
+    message: 'name must contain only letters, hyphens and apostrophes',
   })
   name!: string;
 }
