@@ -1,16 +1,59 @@
 # HNG-14 Backend Stage 0: Name Gender Classification API
 
-## Project Description and Purpose
+A NestJS-based REST API that predicts the gender of a given name using the Genderize.io service.
 
-This project serves as the backend for the HNG-14 Stage 0 task, implementing a simple API to classify the likely gender of a given name using the Genderize.io service. It's built with Node.js and TypeScript, leveraging Express for robust API handling and custom error management.
+## Features
 
-## API Endpoint Documentation
+- **Gender Prediction**: Query any name to get predicted gender, probability, and confidence metrics
+- **Global Validation**: Automatic request validation using NestJS ValidationPipe
+- **Error Handling**: Structured error responses with appropriate HTTP status codes
+- **CORS Support**: Enabled for cross-origin requests
+- **Type-Safe**: Built with TypeScript for robust type checking
 
-### `GET /api/classify?name=<name>`
+## API Documentation
 
-This endpoint accepts a name as a query parameter and returns a prediction of the name's gender, along with associated confidence metrics.
+### Base URL
 
-**Request:**
+```
+http://localhost:3000
+```
+
+### Endpoints
+
+#### `GET /`
+
+Health check endpoint.
+
+**Response:**
+
+```json
+{
+  "message": "Name Gender Classification API is running"
+}
+```
+
+#### `GET /health`
+
+Service health status endpoint.
+
+**Response:**
+
+```json
+{
+  "status": "ok",
+  "timestamp": "2026-04-17T05:25:00.000Z"
+}
+```
+
+#### `GET /api/classify?name=<name>`
+
+Predict the gender of a given name.
+
+**Request Parameters:**
+
+- `name` (required): The name to classify
+
+**Example Request:**
 
 ```
 GET /api/classify?name=john
@@ -27,112 +70,172 @@ GET /api/classify?name=john
     "probability": 0.99,
     "sample_size": 10000,
     "is_confident": true,
-    "processed_at": "2026-04-13T01:00:00.000Z"
+    "processed_at": "2026-04-17T05:25:00.000Z"
   }
 }
 ```
 
-**Error Response Examples:**
+**Error Responses:**
 
-*   **Missing or Empty Name (400 Bad Request):**
-    ```json
-    {
-      "status": "error",
-      "message": "Name query parameter is required and cannot be empty"
-    }
-    ```
+*Missing Name (400 Bad Request):*
 
-*   **Invalid Name Type (422 Unprocessable Entity):**
-    ```json
-    {
-      "status": "error",
-      "message": "Name query parameter must be a string"
-    }
-    ```
+```json
+{
+  "status": "error",
+  "message": "Name query parameter is required and cannot be empty"
+}
+```
 
-*   **No Prediction Available (422 Unprocessable Entity):**
-    ```json
-    {
-      "status": "error",
-      "message": "No prediction available for the provided name"
-    }
-    ```
+*Invalid Name Type (422 Unprocessable Entity):*
 
-*   **Upstream API Failure (502 Bad Gateway):**
-    ```json
-    {
-      "status": "error",
-      "message": "Genderize API returned non-OK status"
-    }
-    ```
+```json
+{
+  "status": "error",
+  "message": "Name query parameter must be a string"
+}
+```
 
-*   **Upstream API Timeout (504 Gateway Timeout):**
-    ```json
-    {
-      "status": "error",
-      "message": "Genderize API request timed out after 5000ms"
-    }
-    ```
+*No Prediction Available (422 Unprocessable Entity):*
 
-### Response Fields Explanation:
+```json
+{
+  "status": "error",
+  "message": "No prediction available for the provided name"
+}
+```
 
-*   `name` (string): The name that was queried.
-*   `gender` (string | null): The predicted gender (`male`, `female`), or `null` if no prediction could be made.
-*   `probability` (number | null): The probability of the predicted gender, between 0 and 1, or `null`.
-*   `sample_size` (number): The number of data samples Genderize.io used for the prediction.
-*   `is_confident` (boolean): `true` if `probability >= 0.7` AND `sample_size >= 100`, otherwise `false`. This indicates a high-confidence prediction.
-*   `processed_at` (string): ISO 8601 formatted UTC timestamp indicating when the request was processed by this API.
+*API Failure (502 Bad Gateway):*
+
+```json
+{
+  "status": "error",
+  "message": "Genderize API returned non-OK status"
+}
+```
+
+*API Timeout (504 Gateway Timeout):*
+
+```json
+{
+  "status": "error",
+  "message": "Genderize API request timed out after 5000ms"
+}
+```
+
+### Response Fields
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `name` | string | The queried name |
+| `gender` | string \| null | Predicted gender (`male`, `female`, or `null`) |
+| `probability` | number \| null | Probability between 0 and 1 |
+| `sample_size` | number | Number of data samples used |
+| `is_confident` | boolean | `true` if probability ≥ 0.7 and sample size ≥ 100 |
+| `processed_at` | string | ISO 8601 UTC timestamp |
 
 ## Local Development
 
 ### Prerequisites
 
-*   Node.js (v18 or higher recommended)
-*   npm (Node Package Manager)
+- Node.js v18 or higher
+- pnpm (recommended) or npm
 
 ### Installation
 
-1.  Clone the repository:
-    ```bash
-    git clone git@github.com:codessage/stage-0-BE.git
-    cd stage-0-BE
-    ```
-2.  Install dependencies:
-    ```bash
-    npm install
-    ```
+```bash
+# Clone the repository
+git clone git@github.com:codessage/BE-stage-1.git
+cd BE-stage-1
+
+# Install dependencies
+pnpm install
+```
 
 ### Running the Application
 
-*   **Development Mode (with hot-reloading):**
-    ```bash
-    npm run dev
-    ```
-    The server will typically run on `http://localhost:3000` (or the port specified in your `.env` file).
+**Development Mode (with watch):**
 
-*   **Build for Production:**
-    ```bash
-    npm run build
-    ```
-    This compiles TypeScript files to JavaScript in the `dist/` directory.
+```bash
+pnpm run start:dev
+```
 
-*   **Start Production Server:**
-    ```bash
-    npm start
-    ```
-    This runs the compiled application from the `dist/` directory.
+**Build for Production:**
 
-## Live API URL
+```bash
+pnpm run build
+```
 
-[Placeholder: This URL will be provided after deployment to Render.com]
+**Start Production Server:**
+
+```bash
+pnpm run start
+```
+
+The server runs on `http://localhost:3000` by default (configurable via `PORT` environment variable).
+
+### Testing
+
+**Unit Tests:**
+
+```bash
+pnpm run test
+```
+
+**E2E Tests:**
+
+```bash
+pnpm run test:e2e
+```
+
+**Test Coverage:**
+
+```bash
+pnpm run test:cov
+```
 
 ## Technology Stack
 
-*   **Runtime:** Node.js
-*   **Language:** TypeScript
-*   **Web Framework:** Express.js
-*   **Middleware:** CORS
-*   **External API:** Genderize.io (for gender prediction)
-*   **Utilities:** `dotenv` (for environment variables)
-*   **Development Tools:** `tsx` (for hot-reloading in dev), `tsc` (TypeScript compiler)
+- **Runtime**: Node.js
+- **Language**: TypeScript
+- **Framework**: NestJS
+- **HTTP Client**: Axios
+- **Validation**: class-validator, class-transformer
+- **Testing**: Jest, Supertest
+- **Development**: pnpm, ts-node, ts-jest
 
+## Project Structure
+
+```
+src/
+├── classification/       # Gender classification module
+│   ├── classification.controller.ts
+│   ├── classification.service.ts
+│   ├── classification.module.ts
+│   ├── dto/
+│   │   └── classification-query.dto.ts
+│   └── types/
+│       └── genderize.types.ts
+├── filters/             # Exception filters
+│   └── http-exception.filter.ts
+├── middleware/          # Custom middleware
+│   ├── errorHandler.ts
+│   └── validateNameParam.ts
+├── services/            # External services
+│   └── genderizeService.ts
+├── errors/              # Custom error classes
+│   ├── ExternalApiError.ts
+│   ├── NoPredictionError.ts
+│   └── ValidationError.ts
+├── app.controller.ts
+├── app.module.ts
+├── app.service.ts
+└── main.ts
+```
+
+## Deployment
+
+For production deployment, refer to the [NestJS deployment documentation](https://docs.nestjs.com/deployment).
+
+## License
+
+UNLICENSED
