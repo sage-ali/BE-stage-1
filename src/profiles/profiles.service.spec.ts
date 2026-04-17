@@ -380,7 +380,7 @@ describe('ProfilesService', () => {
         );
 
       await expect(service.enrichProfile('test')).rejects.toThrow(
-        /Invalid or unusable data from Genderize API/,
+        /Genderize returned an invalid response/,
       );
     });
 
@@ -400,7 +400,7 @@ describe('ProfilesService', () => {
         );
 
       await expect(service.enrichProfile('test')).rejects.toThrow(
-        /Invalid or unusable data from Agify API/,
+        /Agify returned an invalid response/,
       );
     });
 
@@ -413,7 +413,7 @@ describe('ProfilesService', () => {
         .mockReturnValueOnce(of(mockAxiosResponse({ country: [] })));
 
       await expect(service.enrichProfile('test')).rejects.toThrow(
-        /Invalid or unusable data from Nationalize API/,
+        /Nationalize returned an invalid response/,
       );
     });
 

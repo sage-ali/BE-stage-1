@@ -6,8 +6,8 @@ export class CreateProfileDto {
     description: 'The first name to enrich and store',
     example: 'ella',
   })
-  @IsNotEmpty()
-  @IsString()
+  @IsNotEmpty({ message: 'Missing or empty name' })
+  @IsString({ message: 'Invalid type' })
   @Matches(/^[a-zA-Z]+$/, {
     message: 'name must contain only alphabetic characters',
   })

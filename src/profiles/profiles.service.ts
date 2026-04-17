@@ -1,4 +1,9 @@
-import { Injectable, HttpException, HttpStatus } from '@nestjs/common';
+import {
+  Injectable,
+  HttpException,
+  HttpStatus,
+  NotFoundException,
+} from '@nestjs/common';
 import { HttpService } from '@nestjs/axios';
 import { firstValueFrom } from 'rxjs';
 import { PrismaService } from '../prisma/prisma.service';
@@ -10,13 +15,17 @@ import {
 } from './types/profiles.types';
 import { HttpsProxyAgent } from 'https-proxy-agent';
 import { uuidv7 } from 'uuidv7';
+import { Prisma } from '@prisma/client';
+
+// Check it here, outside the class
+const FIXIE_URL = process.env.FIXIE_URL;
+if (!FIXIE_URL) {
+  throw new Error('FIXIE_URL environment variable is not set');
+}
 
 @Injectable()
 export class ProfilesService {
-  // Construct the full proxy URL
-  private readonly FIXIE_URL =
-    'http://fixie:n5mtYhd3N0SHZqO@ventoux.usefixie.com:80';
-  private readonly proxyAgent = new HttpsProxyAgent(this.FIXIE_URL);
+  private readonly proxyAgent = new HttpsProxyAgent(FIXIE_URL);
 
   constructor(
     private readonly httpService: HttpService,
@@ -45,7 +54,7 @@ export class ProfilesService {
         throw error;
       }
       throw new HttpException(
-        `Upstream dependency failure`,
+        'Upstream or server failure',
         HttpStatus.BAD_GATEWAY,
       );
     }
@@ -71,21 +80,21 @@ export class ProfilesService {
   ): void {
     if (genderize.gender === null || genderize.count === 0) {
       throw new HttpException(
-        'Invalid or unusable data from Genderize API',
+        'Genderize returned an invalid response',
         HttpStatus.BAD_GATEWAY,
       );
     }
 
     if (agify.age === null) {
       throw new HttpException(
-        'Invalid or unusable data from Agify API',
+        'Agify returned an invalid response',
         HttpStatus.BAD_GATEWAY,
       );
     }
 
     if (!nationalize.country || nationalize.country.length === 0) {
       throw new HttpException(
-        'Invalid or unusable data from Nationalize API',
+        'Nationalize returned an invalid response',
         HttpStatus.BAD_GATEWAY,
       );
     }
@@ -201,7 +210,7 @@ export class ProfilesService {
     }
 
     if (filters.age_group) {
-      where.age_group = filters.age_group;
+      where.age_group = filters.age_group.toLowerCase();
     }
 
     const [count, data] = await Promise.all([
@@ -216,8 +225,15 @@ export class ProfilesService {
   }
 
   async deleteProfile(id: string) {
-    return this.prisma.profile.delete({
-      where: { id },
-    });
+    try {
+      return await this.prisma.profile.delete({
+        where: { id },
+      });
+    } catch (error) {
+      if (error instanceof Prisma.PrismaClientKnownRequestError) {
+        throw new NotFoundException('Profile not found');
+      }
+      throw error;
+    }
   }
 }

@@ -30,8 +30,9 @@ export class ClassificationService {
 
       // Check for inconclusive prediction BEFORE transformations
       if (data.gender === null || data.count === 0) {
-        throw new NoPredictionError(
-          'No prediction available for the provided name',
+        throw new ExternalApiError(
+          'Genderize returned an invalid response',
+          502,
         );
       }
 
@@ -52,7 +53,10 @@ export class ClassificationService {
         processed_at: processed_at,
       };
     } catch (error: unknown) {
-      if (error instanceof NoPredictionError) {
+      if (
+        error instanceof NoPredictionError ||
+        error instanceof ExternalApiError
+      ) {
         throw error;
       }
 
@@ -61,36 +65,20 @@ export class ClassificationService {
           error.code === 'ECONNABORTED' ||
           error.message?.includes('timeout')
         ) {
-          throw new ExternalApiError(
-            `Genderize API request timed out after ${this.GENDERIZE_API_TIMEOUT_MS}ms`,
-            504,
-          );
+          throw new ExternalApiError('Upstream or server failure', 504);
         }
 
         if (error.response) {
-          const errorText = error.response.data as string;
-          console.error(
-            `Genderize API returned non-OK status: ${error.response.status} - ${errorText}`,
-          );
           throw new ExternalApiError(
-            'Genderize API returned non-OK status',
+            'Genderize returned an invalid response',
             502,
           );
         } else if (error.request) {
-          throw new ExternalApiError(
-            `Failed to fetch from Genderize API: ${error.message}`,
-            502,
-          );
+          throw new ExternalApiError('Upstream or server failure', 502);
         }
       }
 
-      // Something happened in setting up the request or unknown error
-      const errorMessage =
-        error instanceof Error ? error.message : 'Unknown error';
-      throw new ExternalApiError(
-        `An unknown error occurred while fetching from Genderize API: ${errorMessage}`,
-        502,
-      );
+      throw new ExternalApiError('Upstream or server failure', 502);
     }
   }
 }

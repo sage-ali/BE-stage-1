@@ -8,6 +8,7 @@ import {
   Param,
   HttpCode,
   HttpStatus,
+  NotFoundException,
 } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiResponse } from '@nestjs/swagger';
 import { ProfilesService } from './profiles.service';
@@ -103,7 +104,7 @@ export class ProfilesController {
     const profile = await this.profilesService.findProfileById(id);
 
     if (!profile) {
-      throw new Error('Profile not found');
+      throw new NotFoundException('Profile not found');
     }
 
     return {
@@ -173,6 +174,10 @@ export class ProfilesController {
   })
   @ApiResponse({ status: 404, description: 'Profile not found' })
   async delete(@Param('id') id: string): Promise<void> {
-    await this.profilesService.deleteProfile(id);
+    try {
+      await this.profilesService.deleteProfile(id);
+    } catch {
+      throw new NotFoundException('Profile not found');
+    }
   }
 }

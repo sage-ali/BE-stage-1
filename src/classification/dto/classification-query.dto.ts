@@ -7,9 +7,9 @@ export class ClassificationQueryDto {
     required: true,
     example: 'john',
   })
-  @IsString()
+  @IsString({ message: 'Invalid type' })
   @IsNotEmpty({
-    message: 'Name query parameter is required and cannot be empty',
+    message: 'Missing or empty name',
   })
   @Matches(/^[a-zA-Z\s-]+$/, {
     message: 'Name must contain only letters, spaces, and hyphens',
