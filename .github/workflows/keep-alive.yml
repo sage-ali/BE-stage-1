@@ -1,7 +1,7 @@
 name: Keep Alive Render
 on:
   schedule:
-    - cron: '*/14 * * * *'
+    - cron: '*/5 * * * *'
   workflow_dispatch:
 
 jobs:
@@ -10,15 +10,5 @@ jobs:
     steps:
       - name: Ping Service
         run: |
-          # Current date is Monday, April 13, 2026.
-          # The script will stop pinging after April 15, 2026 (2 days).
-          CURRENT_DATE=$(date +%Y-%m-%d)
-          STOP_DATE="2026-04-16"
-
-          if [[ "$CURRENT_DATE" < "$STOP_DATE" ]]; then
-            echo "Keep-alive active. Pinging service..."
-            # Replace the URL below if your Render service name is different
-            curl -s https://hng-14-be-stage-0.onrender.com/health
-          else
-            echo "The 2-day keep-alive period has ended. No ping sent."
-          fi
+          echo "Keep-alive active. Pinging service..."
+          curl -s https://hng-14-be-stage-1.onrender.com/health
