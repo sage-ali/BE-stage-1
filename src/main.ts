@@ -29,7 +29,13 @@ async function bootstrap() {
   );
 
   // Enable global exception filter
-  app.useGlobalFilters(new HttpExceptionFilter());
+  const logger = app.get(Logger);
+  app.useGlobalFilters(new HttpExceptionFilter(logger));
+
+  // Set global prefix for all routes
+  app.setGlobalPrefix('api', {
+    exclude: ['/', 'health'], // Exclude health routes from the prefix
+  });
 
   // Swagger configuration
   const config = new DocumentBuilder()
