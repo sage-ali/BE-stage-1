@@ -20,15 +20,15 @@ import { Prisma } from '@prisma/client';
 import { Logger } from 'nestjs-pino';
 
 // Check it here, outside the class
-const FIXIE_URL = process.env.FIXIE_URL;
+const PROXY_URL = process.env.PROXY_URL;
 
 /**
  * Service responsible for managing user profiles, including data enrichment from external APIs.
  */
 @Injectable()
 export class ProfilesService {
-  private readonly proxyAgent = FIXIE_URL
-    ? new HttpsProxyAgent(FIXIE_URL)
+  private readonly proxyAgent = PROXY_URL
+    ? new HttpsProxyAgent(PROXY_URL)
     : undefined;
 
   constructor(

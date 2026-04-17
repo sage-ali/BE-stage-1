@@ -1,18 +1,20 @@
-# HNG-14 Backend Stage 0: Name Gender Classification API
+# HNG-14 Backend Stage 1: Name Gender Classification & Profile API
 
-A NestJS-based REST API that predicts the gender of a given name using the Genderize.io service.
+A NestJS-based REST API that predicts and stores profile data (gender, age, and nationality) for a given name using external services (Genderize, Agify, and Nationalize).
 
 ## Features
 
-- **Gender Prediction**: Query any name to get predicted gender, probability, and confidence metrics
-- **Global Validation**: Automatic request validation using NestJS ValidationPipe
-- **Error Handling**: Structured error responses with appropriate HTTP status codes
-- **CORS Support**: Enabled for cross-origin requests
-- **Type-Safe**: Built with TypeScript for robust type checking
+- **Profile Enrichment**: Automatically fetches and stores gender, age, and nationality data for any given name.
+- **Idempotency**: Seamlessly handles duplicate requests by returning existing profiles.
+- **Filtering**: Search stored profiles by gender, country, or age group.
+- **Global Error Handling**: Standardized error responses following a strict format.
+- **Persistence**: Managed PostgreSQL database with Prisma ORM.
+- **API Documentation**: Integrated Swagger/OpenAPI UI.
 
 ## API Documentation
 
 ### Base URL
+The API uses a global `/api` prefix for business logic, while health checks are available at the root.
 
 ```
 http://localhost:3000
@@ -21,313 +23,93 @@ http://localhost:3000
 ### Endpoints
 
 #### `GET /`
-
 Health check endpoint.
-
-**Response:**
-
-```json
-{
-  "message": "Name Gender Classification API is running"
-}
-```
+**Response:** `Hello World!`
 
 #### `GET /health`
-
-Service health status endpoint.
-
-**Response:**
-
-```json
-{
-  "status": "ok",
-  "timestamp": "2026-04-17T05:25:00.000Z"
-}
-```
+Service health status.
+**Response:** `{"status": "ok"}`
 
 #### `GET /api/classify?name=<name>`
+Predict gender for a name (read-only).
+**Example:** `GET /api/classify?name=john`
 
-Predict the gender of a given name.
-
-**Request Parameters:**
-
-- `name` (required): The name to classify
-
-**Example Request:**
-
-```http
-GET /api/classify?name=john
-```
-
-**Successful Response (200 OK):**
-
+#### `POST /api/profiles`
+Create or retrieve an enriched profile.
+**Body:** `{"name": "peter"}`
+**Success Response (201/200):**
 ```json
 {
   "status": "success",
   "data": {
-    "name": "john",
+    "id": "uuid-v7",
+    "name": "peter",
     "gender": "male",
-    "probability": 0.99,
-    "sample_size": 10000,
-    "is_confident": true,
-    "processed_at": "2026-04-17T05:25:00.000Z"
+    "gender_probability": 0.99,
+    "sample_size": 100,
+    "age": 42,
+    "age_group": "adult",
+    "country_id": "US",
+    "country_probability": 0.8,
+    "created_at": "..."
   }
 }
 ```
 
-**Error Responses:**
+#### `GET /api/profiles/:id`
+Retrieve a profile by its ID.
 
-*Missing Name (400 Bad Request):*
+#### `GET /api/profiles`
+List all profiles with optional filters.
+**Query Params:** `gender`, `country_id`, `age_group`
 
-```json
-{
-  "status": "error",
-  "message": "Name query parameter is required and cannot be empty"
-}
-```
-
-*Invalid Name Type (422 Unprocessable Entity):*
-
-```json
-{
-  "status": "error",
-  "message": "Name query parameter must be a string"
-}
-```
-
-*No Prediction Available (422 Unprocessable Entity):*
-
-```json
-{
-  "status": "error",
-  "message": "No prediction available for the provided name"
-}
-```
-
-*API Failure (502 Bad Gateway):*
-
-```json
-{
-  "status": "error",
-  "message": "Genderize API returned non-OK status"
-}
-```
-
-*API Timeout (504 Gateway Timeout):*
-
-```json
-{
-  "status": "error",
-  "message": "Genderize API request timed out after 5000ms"
-}
-```
-
-### Response Fields
-
- | Field | Type | Description |
- |-------|------|-------------|
- | `name` | string | The queried name |
- | `gender` | string \| null | Predicted gender (`male`, `female`, or `null`) |
- | `probability` | number \| null | Probability between 0 and 1 |
- | `sample_size` | number | Number of data samples used |
- | `is_confident` | boolean | `true` if probability ≥ 0.7 and sample size ≥ 100 |
- | `processed_at` | string | ISO 8601 UTC timestamp |
+#### `DELETE /api/profiles/:id`
+Delete a profile by its ID.
 
 ## Local Development
 
 ### Prerequisites
+- Node.js v20+
+- pnpm
+- Docker (for local DB)
 
-- Node.js v18 or higher
-- pnpm (recommended) or npm
-- Docker and Docker Compose
+### Setup
+1. **Clone & Install:**
+   ```bash
+   pnpm install
+   ```
+2. **Environment:** Copy `.env.example` to `.env` and configure `DATABASE_URL` and `PROXY_URL`.
+3. **Database:**
+   ```bash
+   pnpm run docker:up
+   pnpm run db:push
+   ```
+4. **Run:**
+   ```bash
+   pnpm run start:dev
+   ```
 
-### Environment Variables
-
-- `LOG_LEVEL`: Set logging level (e.g., `info`, `debug`, `warn`, `error`). Default: `info`.
-- `NODE_ENV`: Set to `production` for JSON logs; otherwise, pretty-logs are used.
-- `DATABASE_URL`: PostgreSQL connection string.
-
-### Setup Database (Docker)
-
-Start the PostgreSQL database using Docker Compose:
-
+## Testing
 ```bash
-pnpm run docker:up
-```
-
-### Database Migration
-
-Push the Prisma schema to the database:
-
-```bash
-pnpm run db:push
-```
-
-### Installation
-
-```bash
-# Clone the repository
-git clone git@github.com:codessage/BE-stage-1.git
-cd BE-stage-1
-
-# Install dependencies
-pnpm install
-
-# Generate Prisma Client
-pnpm run prisma:generate
-```
-
-### Running the Application
-
-**Development Mode:**
-
-```bash
-pnpm run start:dev
-```
-
-**Prisma Studio:**
-
-To view the database contents:
-
-```bash
-pnpm run prisma:studio
-```
-
-**Build for Production:**
-
-```bash
-pnpm run build
-```
-
-**Start Production Server:**
-
-```bash
-pnpm run start
-```
-
-The server runs on `http://localhost:3000` by default (configurable via `PORT` environment variable).
-
-### Testing
-
-**Unit Tests:**
-
-```bash
-pnpm run test
-```
-
-**E2E Tests:**
-
-```bash
-pnpm run test:e2e
-```
-
-**Test Coverage:**
-
-```bash
-pnpm run test:cov
-```
-
-### Logging
-
-Logs are output to stdout in JSON format (pretty-printed in development). You can customize the log level via the `LOG_LEVEL` environment variable.
-
-### API Documentation
-
-Interactive API documentation is available at `http://localhost:3000/api-docs`. The OpenAPI specification is generated automatically from the code using `@nestjs/swagger`.
-
-**Endpoints documented:**
-
-- `GET /` - Health check endpoint
-- `GET /health` - Service health status endpoint
-- `GET /api/classify?name=<name>` - Gender prediction endpoint with query parameter validation and response examples
-
-## Technology Stack
-
-- **Runtime**: Node.js
-- **Language**: TypeScript
-- **Framework**: NestJS
-- **ORM**: Prisma
-- **Database**: PostgreSQL
-- **HTTP Client**: Axios
-- **Validation**: class-validator, class-transformer
-- **Testing**: Vitest, Supertest
-- **Logging**: Pino
-- **Development**: pnpm, ts-node, ts-jest
-
-## Project Structure
-
-```
-src/
-├── classification/       # Gender classification module
-│   ├── classification.controller.ts
-│   ├── classification.service.ts
-│   ├── classification.module.ts
-│   ├── dto/
-│   │   └── classification-query.dto.ts
-│   └── types/
-│       └── genderize.types.ts
-├── prisma/              # Prisma configuration
-│   ├── prisma.module.ts
-│   └── prisma.service.ts
-├── filters/             # Exception filters
-│   └── http-exception.filter.ts
-├── middleware/          # Custom middleware
-│   ├── errorHandler.ts
-│   └── validateNameParam.ts
-├── services/            # External services
-│   └── genderizeService.ts
-├── errors/              # Custom error classes
-│   ├── ExternalApiError.ts
-│   ├── NoPredictionError.ts
-│   └── ValidationError.ts
-├── app.controller.ts
-├── app.module.ts
-├── app.service.ts
-└── main.ts
+pnpm run test        # Unit tests
+pnpm run test:e2e    # E2E tests
 ```
 
 ## Deployment
 
 ### Render Deployment
-
-This project includes a `render.yaml` blueprint for automated deployment to [Render](https://render.com).
-
-**What's configured:**
-
-- **PostgreSQL Database**: Free tier, automatically provisioned
-- **Web Service**: Node.js application with automatic deploys
-- **Environment Variables**: `DATABASE_URL` is automatically linked from the PostgreSQL service
+This project is configured for seamless deployment to [Render](https://render.com) using the provided `render.yaml` blueprint.
 
 **Deployment Steps:**
+1. Connect your GitHub repository to Render.
+2. Render will detect `render.yaml` and provision:
+   - A managed PostgreSQL instance.
+   - A Node.js Web Service.
+3. The build command `pnpm build` automatically handles Prisma client generation and database schema synchronization (using `prisma db push` or `prisma migrate deploy`).
 
-1. Connect your GitHub repository to Render
-2. Render will automatically detect the `render.yaml` file
-3. The service will:
-   - Run `pnpm install`
-   - Run `pnpm prisma:generate` to generate the Prisma Client
-   - Run `pnpm build` to compile the NestJS application
-   - Start the production server with `pnpm start:prod`
-4. Access your application at the provided Render URL
-
-**Environment Variables (handled automatically):**
-
-- `DATABASE_URL`: Connection string from Render's PostgreSQL service
-- `PORT`: Provided by Render (default 3000)
-- `NODE_ENV`: Set to `production`
-
-### Docker Commands Reference
-
-```bash
-# Start PostgreSQL database
-pnpm run docker:up
-
-# Stop PostgreSQL database
-pnpm run docker:down
-
-# View running containers
-docker compose ps
-```
+**Required Environment Variables:**
+- `PROXY_URL`: Proxy URL for upstream API requests (required if using a proxy).
+- `DATABASE_URL`: Automatically linked from the managed database.
 
 ## License
-
 UNLICENSED
