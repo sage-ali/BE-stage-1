@@ -1,6 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { HttpService } from '@nestjs/axios';
 import { firstValueFrom } from 'rxjs';
+import { AxiosError } from 'axios';
 import { ExternalApiError } from '../errors/ExternalApiError';
 import { NoPredictionError } from '../errors/NoPredictionError';
 import {
@@ -50,39 +51,46 @@ export class ClassificationService {
         is_confident: is_confident,
         processed_at: processed_at,
       };
-    } catch (error: any) {
+    } catch (error: unknown) {
       if (error instanceof NoPredictionError) {
         throw error;
       }
 
-      if (error.code === 'ECONNABORTED' || error.message?.includes('timeout')) {
-        throw new ExternalApiError(
-          `Genderize API request timed out after ${this.GENDERIZE_API_TIMEOUT_MS}ms`,
-          504,
-        );
+      if (error instanceof AxiosError) {
+        if (
+          error.code === 'ECONNABORTED' ||
+          error.message?.includes('timeout')
+        ) {
+          throw new ExternalApiError(
+            `Genderize API request timed out after ${this.GENDERIZE_API_TIMEOUT_MS}ms`,
+            504,
+          );
+        }
+
+        if (error.response) {
+          const errorText = error.response.data as string;
+          console.error(
+            `Genderize API returned non-OK status: ${error.response.status} - ${errorText}`,
+          );
+          throw new ExternalApiError(
+            'Genderize API returned non-OK status',
+            502,
+          );
+        } else if (error.request) {
+          throw new ExternalApiError(
+            `Failed to fetch from Genderize API: ${error.message}`,
+            502,
+          );
+        }
       }
 
-      if (error.response) {
-        // The request was made and the server responded with a status code
-        // that falls out of the range of 2xx
-        const errorText = error.response.data;
-        console.error(
-          `Genderize API returned non-OK status: ${error.response.status} - ${errorText}`,
-        );
-        throw new ExternalApiError('Genderize API returned non-OK status', 502);
-      } else if (error.request) {
-        // The request was made but no response was received
-        throw new ExternalApiError(
-          `Failed to fetch from Genderize API: ${error.message}`,
-          502,
-        );
-      } else {
-        // Something happened in setting up the request
-        throw new ExternalApiError(
-          `An unknown error occurred while fetching from Genderize API: ${error.message}`,
-          502,
-        );
-      }
+      // Something happened in setting up the request or unknown error
+      const errorMessage =
+        error instanceof Error ? error.message : 'Unknown error';
+      throw new ExternalApiError(
+        `An unknown error occurred while fetching from Genderize API: ${errorMessage}`,
+        502,
+      );
     }
   }
 }
