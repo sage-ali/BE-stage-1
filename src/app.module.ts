@@ -3,6 +3,7 @@ import { LoggerModule } from 'nestjs-pino';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { ClassificationModule } from './classification/classification.module';
+import { PrismaModule } from './prisma/prisma.module';
 
 @Module({
   imports: [
@@ -20,6 +21,7 @@ import { ClassificationModule } from './classification/classification.module';
         level: process.env.LOG_LEVEL || 'info',
       },
     }),
+    PrismaModule,
     ClassificationModule,
   ],
   controllers: [AppController],

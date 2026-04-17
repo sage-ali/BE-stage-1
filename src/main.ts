@@ -4,6 +4,10 @@ import { ValidationPipe } from '@nestjs/common';
 import { HttpExceptionFilter } from './filters/http-exception.filter';
 import { Logger } from 'nestjs-pino';
 import { SwaggerModule, DocumentBuilder } from '@nestjs/swagger';
+import * as dotenv from 'dotenv';
+
+dotenv.config();
+console.log('BOOTSTRAP DATABASE_URL:', process.env.DATABASE_URL);
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule, {
