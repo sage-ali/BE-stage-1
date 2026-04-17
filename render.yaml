@@ -10,7 +10,7 @@ services:
     runtime: node
     region: oregon
     buildCommand: pnpm install && pnpm build
-    startCommand: pnpm start:prod
+    startCommand: node dist/src/main.js
     plan: free
     autoDeploy: true
     healthCheckPath: /health
