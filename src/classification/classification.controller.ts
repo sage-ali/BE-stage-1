@@ -4,7 +4,7 @@ import { ClassificationQueryDto } from './dto/classification-query.dto';
 import { HttpExceptionFilter } from '../filters/http-exception.filter';
 import { ApiTags, ApiOperation, ApiQuery, ApiResponse } from '@nestjs/swagger';
 
-@Controller('api')
+@Controller()
 @UseFilters(HttpExceptionFilter)
 @ApiTags('classification')
 export class ClassificationController {
