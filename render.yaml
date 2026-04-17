@@ -8,6 +8,7 @@ services:
   - name: hng-14-be-stage-1
     type: web
     runtime: node
+    region: oregon
     buildCommand: pnpm install && pnpm build
     startCommand: pnpm start:prod
     plan: free
