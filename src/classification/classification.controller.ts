@@ -4,12 +4,21 @@ import { ClassificationQueryDto } from './dto/classification-query.dto';
 import { HttpExceptionFilter } from '../filters/http-exception.filter';
 import { ApiTags, ApiOperation, ApiQuery, ApiResponse } from '@nestjs/swagger';
 
+/**
+ * Controller for gender classification of names.
+ */
 @Controller()
 @UseFilters(HttpExceptionFilter)
 @ApiTags('classification')
 export class ClassificationController {
   constructor(private readonly classificationService: ClassificationService) {}
 
+  /**
+   * Endpoint to classify a name by gender.
+   *
+   * @param query - The query parameters containing the name.
+   * @returns An object containing the classification result.
+   */
   @Get('classify')
   @ApiOperation({
     summary: 'Predict gender of a name',

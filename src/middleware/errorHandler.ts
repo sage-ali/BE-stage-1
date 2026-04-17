@@ -1,5 +1,13 @@
 import { Request, Response, NextFunction } from 'express';
 
+/**
+ * Express middleware for handling global application errors.
+ *
+ * @param err - The error object.
+ * @param req - The Express request object.
+ * @param res - The Express response object.
+ * @param next - The Express next function.
+ */
 export const errorHandler = (
   err: Error,
   req: Request,

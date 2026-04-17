@@ -2,11 +2,23 @@ import { Injectable, OnModuleInit, OnModuleDestroy } from '@nestjs/common';
 import { PrismaClient } from '@prisma/client';
 import { PrismaPg } from '@prisma/adapter-pg';
 
+/**
+ * Service responsible for managing the Prisma Client connection to the database.
+ *
+ * @remarks
+ * This service extends the {@link PrismaClient} and implements NestJS lifecycle hooks
+ * to ensure the database connection is properly managed during application startup and shutdown.
+ */
 @Injectable()
 export class PrismaService
   extends PrismaClient
   implements OnModuleInit, OnModuleDestroy
 {
+  /**
+   * Initializes the PrismaService and configures the database adapter.
+   *
+   * @throws {Error} If the `DATABASE_URL` environment variable is missing or empty.
+   */
   constructor() {
     const dbUrl = process.env.DATABASE_URL;
 
@@ -23,10 +35,20 @@ export class PrismaService
     super({ adapter });
   }
 
+  /**
+   * Connects to the database when the module is initialized.
+   *
+   * @returns A promise that resolves when the connection is established.
+   */
   async onModuleInit() {
     await this.$connect();
   }
 
+  /**
+   * Disconnects from the database when the module is destroyed.
+   *
+   * @returns A promise that resolves when the connection is closed.
+   */
   async onModuleDestroy() {
     await this.$disconnect();
   }

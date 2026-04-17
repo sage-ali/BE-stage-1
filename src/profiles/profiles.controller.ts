@@ -20,11 +20,21 @@ import {
   ProfileListResponseDto,
 } from './dto/profile-response.dto';
 
+/**
+ * Controller for managing user profiles.
+ * Provides endpoints for creating, retrieving, and deleting profiles.
+ */
 @ApiTags('profiles')
 @Controller('profiles')
 export class ProfilesController {
   constructor(private readonly profilesService: ProfilesService) {}
 
+  /**
+   * Creates a new profile or retrieves an existing one.
+   *
+   * @param createProfileDto - The data required to create a profile.
+   * @returns A promise that resolves to the created or existing profile.
+   */
   @Post()
   @ApiOperation({
     summary: 'Create a new profile with idempotency',
@@ -89,6 +99,13 @@ export class ProfilesController {
     };
   }
 
+  /**
+   * Retrieves a profile by its ID.
+   *
+   * @param id - The unique identifier of the profile.
+   * @returns A promise that resolves to the found profile.
+   * @throws {NotFoundException} If the profile is not found.
+   */
   @Get(':id')
   @ApiOperation({
     summary: 'Get profile by ID',
@@ -124,6 +141,12 @@ export class ProfilesController {
     };
   }
 
+  /**
+   * Retrieves all profiles, optionally filtered by gender, country, or age group.
+   *
+   * @param query - The filtering criteria.
+   * @returns A promise that resolves to a list of profiles and the total count.
+   */
   @Get()
   @ApiOperation({
     summary: 'Get all profiles with optional filtering',
@@ -162,6 +185,13 @@ export class ProfilesController {
     };
   }
 
+  /**
+   * Deletes a profile by its ID.
+   *
+   * @param id - The unique identifier of the profile to delete.
+   * @returns A promise that resolves when the profile is deleted.
+   * @throws {NotFoundException} If the profile is not found.
+   */
   @Delete(':id')
   @HttpCode(HttpStatus.NO_CONTENT)
   @ApiOperation({

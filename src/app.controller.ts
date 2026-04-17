@@ -2,13 +2,26 @@ import { Controller, Get, Logger } from '@nestjs/common';
 import { AppService } from './app.service';
 import { ApiTags, ApiOperation, ApiResponse } from '@nestjs/swagger';
 
+/**
+ * Controller providing health check and basic application endpoints.
+ */
 @Controller()
 @ApiTags('health')
 export class AppController {
   private readonly logger = new Logger(AppController.name);
 
+  /**
+   * Initializes the AppController.
+   *
+   * @param appService - The application service.
+   */
   constructor(private readonly appService: AppService) {}
 
+  /**
+   * Root health check endpoint.
+   *
+   * @returns A welcome message from the application.
+   */
   @Get()
   @ApiOperation({
     summary: 'Health check endpoint',
@@ -20,6 +33,11 @@ export class AppController {
     return this.appService.getHello();
   }
 
+  /**
+   * Detailed health check endpoint.
+   *
+   * @returns An object indicating the health status of the service.
+   */
   @Get('health')
   @ApiOperation({
     summary: 'Service health status',

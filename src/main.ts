@@ -8,6 +8,14 @@ import * as dotenv from 'dotenv';
 
 dotenv.config();
 
+/**
+ * Bootstraps the NestJS application.
+ *
+ * Configures global middleware, validation pipes, filters, Swagger documentation,
+ * and starts the server on the specified port.
+ *
+ * @returns {Promise<void>} A promise that resolves when the application has started.
+ */
 async function bootstrap() {
   const app = await NestFactory.create(AppModule, {
     bufferLogs: true,

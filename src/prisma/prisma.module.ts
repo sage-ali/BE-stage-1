@@ -5,4 +5,7 @@ import { PrismaService } from './prisma.service';
   providers: [PrismaService],
   exports: [PrismaService],
 })
+/**
+ * Module that provides and exports the Prisma service for database access.
+ */
 export class PrismaModule {}

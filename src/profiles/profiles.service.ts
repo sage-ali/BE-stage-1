@@ -23,6 +23,9 @@ if (!FIXIE_URL) {
   throw new Error('FIXIE_URL environment variable is not set');
 }
 
+/**
+ * Service responsible for managing user profiles, including data enrichment from external APIs.
+ */
 @Injectable()
 export class ProfilesService {
   private readonly proxyAgent = new HttpsProxyAgent(FIXIE_URL);
@@ -32,6 +35,13 @@ export class ProfilesService {
     private readonly prisma: PrismaService,
   ) {}
 
+  /**
+   * Enriches a profile name with gender, age, and nationality data from external APIs.
+   *
+   * @param name - The name to enrich.
+   * @returns A promise that resolves to the enriched profile data or undefined.
+   * @throws {HttpException} If an external API returns an invalid response or fails.
+   */
   async enrichProfile(name: string): Promise<EnrichedProfile | undefined> {
     const urls = {
       genderize: `https://api.genderize.io?name=${name}`,
@@ -133,6 +143,13 @@ export class ProfilesService {
     return 'senior';
   }
 
+  /**
+   * Creates a new profile or returns an existing one if the name already exists.
+   *
+   * @param name - The name of the profile to create.
+   * @returns A promise that resolves to an object containing the profile and whether it already existed.
+   * @throws {HttpException} If profile enrichment fails.
+   */
   async createProfile(name: string) {
     // Normalize name to lowercase
     const normalizedName = name.toLowerCase();
@@ -184,12 +201,24 @@ export class ProfilesService {
     };
   }
 
+  /**
+   * Finds a profile by its unique identifier.
+   *
+   * @param id - The UUID of the profile.
+   * @returns A promise that resolves to the profile or null if not found.
+   */
   async findProfileById(id: string) {
     return this.prisma.profile.findUnique({
       where: { id },
     });
   }
 
+  /**
+   * Retrieves all profiles with optional filtering.
+   *
+   * @param filters - An object containing optional filters for gender, country_id, and age_group.
+   * @returns A promise that resolves to an object containing the total count and the list of profiles.
+   */
   async findAllProfiles(filters: {
     gender?: string;
     country_id?: string;
@@ -224,6 +253,13 @@ export class ProfilesService {
     return { count, data };
   }
 
+  /**
+   * Deletes a profile by its unique identifier.
+   *
+   * @param id - The UUID of the profile to delete.
+   * @returns A promise that resolves to the deleted profile.
+   * @throws {NotFoundException} If the profile does not exist.
+   */
   async deleteProfile(id: string) {
     try {
       return await this.prisma.profile.delete({

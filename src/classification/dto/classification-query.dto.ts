@@ -1,7 +1,14 @@
 import { IsString, IsNotEmpty, Matches } from 'class-validator';
 import { ApiProperty } from '@nestjs/swagger';
 
+/**
+ * Data transfer object for a name classification query.
+ */
 export class ClassificationQueryDto {
+  /**
+   * The name to classify.
+   * Must contain only letters, spaces, and hyphens.
+   */
   @ApiProperty({
     description: 'The name to classify',
     required: true,

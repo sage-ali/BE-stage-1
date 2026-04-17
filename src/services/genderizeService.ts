@@ -17,6 +17,14 @@ interface TransformedGenderizeResponse {
   processed_at: string;
 }
 
+/**
+ * Fetches gender prediction for a given name using the Genderize.io API.
+ *
+ * @param name - The name to predict the gender for.
+ * @returns A promise that resolves to a {@link TransformedGenderizeResponse} object.
+ * @throws {ExternalApiError} If the API request fails, times out, or returns a non-OK status.
+ * @throws {NoPredictionError} If the API cannot provide a prediction for the name.
+ */
 export const getGenderFromName = async (
   name: string,
 ): Promise<TransformedGenderizeResponse> => {

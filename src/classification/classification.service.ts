@@ -9,12 +9,22 @@ import {
   TransformedGenderizeResponse,
 } from './types/genderize.types';
 
+/**
+ * Service for classifying names into gender predictions using external APIs.
+ */
 @Injectable()
 export class ClassificationService {
   private readonly GENDERIZE_API_TIMEOUT_MS = 5000;
 
   constructor(private readonly httpService: HttpService) {}
 
+  /**
+   * Predicts the gender of a given name.
+   *
+   * @param name - The name to classify.
+   * @returns A promise that resolves to the transformed genderize response.
+   * @throws {ExternalApiError} If the external API fails or returns invalid data.
+   */
   async getClassification(name: string): Promise<TransformedGenderizeResponse> {
     const url = new URL('https://api.genderize.io');
     url.searchParams.set('name', name);

@@ -9,4 +9,7 @@ import { PrismaModule } from '../prisma/prisma.module';
   controllers: [ClassificationController],
   providers: [ClassificationService],
 })
+/**
+ * Module responsible for name gender classification logic.
+ */
 export class ClassificationModule {}

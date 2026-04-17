@@ -29,4 +29,10 @@ import { ProfilesModule } from './profiles/profiles.module';
   controllers: [AppController],
   providers: [AppService],
 })
+/**
+ * The root module of the application.
+ *
+ * This module is responsible for importing all other modules,
+ * setting up logging, and configuring global providers.
+ */
 export class AppModule {}

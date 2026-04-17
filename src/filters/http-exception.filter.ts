@@ -9,10 +9,20 @@ import {
 import { Request, Response } from 'express';
 import { Logger } from 'nestjs-pino';
 
+/**
+ * Filter for catching and handling HTTP exceptions across the application.
+ * Normalizes error responses and logs errors using Pino.
+ */
 @Catch()
 export class HttpExceptionFilter implements ExceptionFilter {
   constructor(@Inject(Logger) private readonly logger: Logger) {}
 
+  /**
+   * Catches an exception and sends a formatted JSON response.
+   *
+   * @param exception - The exception being handled.
+   * @param host - The arguments host providing context for the current execution.
+   */
   catch(exception: unknown, host: ArgumentsHost) {
     const ctx = host.switchToHttp();
     const response = ctx.getResponse<Response>();

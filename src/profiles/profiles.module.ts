@@ -9,4 +9,7 @@ import { PrismaModule } from '../prisma/prisma.module';
   providers: [ProfilesService],
   controllers: [ProfilesController],
 })
+/**
+ * Module responsible for handling user profiles and enrichment.
+ */
 export class ProfilesModule {}
