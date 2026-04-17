@@ -3,6 +3,7 @@ import { AppModule } from './app.module';
 import { ValidationPipe } from '@nestjs/common';
 import { HttpExceptionFilter } from './filters/http-exception.filter';
 import { Logger } from 'nestjs-pino';
+import { SwaggerModule, DocumentBuilder } from '@nestjs/swagger';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule, {
@@ -26,6 +27,18 @@ async function bootstrap() {
 
   // Enable global exception filter
   app.useGlobalFilters(new HttpExceptionFilter());
+
+  // Swagger configuration
+  const config = new DocumentBuilder()
+    .setTitle('Name Gender Classification API')
+    .setDescription(
+      'A NestJS-based REST API that predicts the gender of a given name using the Genderize.io service.',
+    )
+    .setVersion('1.0')
+    .addTag('classification')
+    .build();
+  const document = SwaggerModule.createDocument(app, config);
+  SwaggerModule.setup('api-docs', app, document);
 
   await app.listen(process.env.PORT ?? 3000);
 }
