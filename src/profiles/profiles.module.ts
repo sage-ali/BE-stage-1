@@ -2,9 +2,10 @@ import { Module } from '@nestjs/common';
 import { HttpModule } from '@nestjs/axios';
 import { ProfilesService } from './profiles.service';
 import { ProfilesController } from './profiles.controller';
+import { PrismaModule } from '../prisma/prisma.module';
 
 @Module({
-  imports: [HttpModule],
+  imports: [HttpModule, PrismaModule],
   providers: [ProfilesService],
   controllers: [ProfilesController],
 })

@@ -2,6 +2,7 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { HttpService } from '@nestjs/axios';
 import { of } from 'rxjs';
 import { ProfilesService } from './profiles.service';
+import { PrismaService } from '../prisma/prisma.service';
 import { AxiosResponse, InternalAxiosRequestConfig, AxiosHeaders } from 'axios';
 import { vi, describe, it, expect, beforeEach, MockInstance } from 'vitest';
 
@@ -26,9 +27,20 @@ describe('ProfilesService', () => {
         ProfilesService,
         {
           provide: HttpService,
-          // Provide a simple object with a vi.fn()
           useValue: {
             get: vi.fn(),
+          },
+        },
+        {
+          provide: PrismaService,
+          useValue: {
+            profile: {
+              findUnique: vi.fn(),
+              create: vi.fn(),
+              findMany: vi.fn(),
+              count: vi.fn(),
+              delete: vi.fn(),
+            },
           },
         },
       ],
@@ -43,6 +55,279 @@ describe('ProfilesService', () => {
 
   it('should be defined', () => {
     expect(service).toBeDefined();
+  });
+
+  describe('createProfile', () => {
+    it('should create a new profile when it does not exist', async () => {
+      const name = 'peter';
+      const normalizedName = name.toLowerCase();
+
+      // Mock findUnique to return null (profile doesn't exist)
+      const findUniqueMock = vi.fn().mockResolvedValue(null);
+      service['prisma'].profile.findUnique = findUniqueMock;
+
+      // Mock enrichProfile to return data
+      const enrichedData = {
+        name: normalizedName,
+        gender: 'male',
+        probability: 0.99,
+        sample_size: 100,
+        age: 42,
+        age_group: 'adult' as const,
+        top_nationality: { country_id: 'US', probability: 0.8 },
+        countries: [{ country_id: 'US', probability: 0.8 }],
+      };
+      vi.spyOn(service, 'enrichProfile').mockResolvedValue(enrichedData);
+
+      // Mock create to return a profile
+      const mockProfile = {
+        id: 'test-uuid-v7',
+        name: normalizedName,
+        gender: 'male',
+        gender_probability: 0.99,
+        sample_size: 100,
+        age: 42,
+        age_group: 'adult',
+        country_id: 'US',
+        country_probability: 0.8,
+        created_at: new Date(),
+      };
+      const createMock = vi.fn().mockResolvedValue(mockProfile);
+      service['prisma'].profile.create = createMock;
+
+      const result = await service.createProfile(name);
+
+      expect(result.existing).toBe(false);
+      expect(result.profile).toEqual(mockProfile);
+      expect(findUniqueMock).toHaveBeenCalledWith({
+        where: { name: normalizedName },
+      });
+    });
+
+    it('should return existing profile when it already exists', async () => {
+      const name = 'peter';
+      const normalizedName = name.toLowerCase();
+
+      const existingProfile = {
+        id: 'existing-id',
+        name: normalizedName,
+        gender: 'male',
+        gender_probability: 0.99,
+        sample_size: 100,
+        age: 42,
+        age_group: 'adult',
+        country_id: 'US',
+        country_probability: 0.8,
+        created_at: new Date(),
+      };
+
+      const findUniqueMock = vi.fn().mockResolvedValue(existingProfile);
+      service['prisma'].profile.findUnique = findUniqueMock;
+
+      const result = await service.createProfile(name);
+
+      expect(result.existing).toBe(true);
+      expect(result.profile).toEqual(existingProfile);
+      expect(service['prisma'].profile.create).not.toHaveBeenCalled();
+    });
+  });
+
+  describe('findProfileById', () => {
+    it('should find a profile by ID', async () => {
+      const mockProfile = {
+        id: 'test-id',
+        name: 'peter',
+        gender: 'male',
+        gender_probability: 0.99,
+        sample_size: 100,
+        age: 42,
+        age_group: 'adult',
+        country_id: 'US',
+        country_probability: 0.8,
+        created_at: new Date(),
+      };
+
+      const findUniqueMock = vi.fn().mockResolvedValue(mockProfile);
+      service['prisma'].profile.findUnique = findUniqueMock;
+
+      const result = await service.findProfileById('test-id');
+
+      expect(result).toEqual(mockProfile);
+      expect(findUniqueMock).toHaveBeenCalledWith({
+        where: { id: 'test-id' },
+      });
+    });
+
+    it('should return null when profile not found', async () => {
+      const findUniqueMock = vi.fn().mockResolvedValue(null);
+      service['prisma'].profile.findUnique = findUniqueMock;
+
+      const result = await service.findProfileById('non-existent-id');
+
+      expect(result).toBeNull();
+    });
+  });
+
+  describe('findAllProfiles', () => {
+    it('should return all profiles without filters', async () => {
+      const mockProfiles = [
+        {
+          id: 'id-1',
+          name: 'peter',
+          gender: 'male',
+          gender_probability: 0.99,
+          sample_size: 100,
+          age: 42,
+          age_group: 'adult',
+          country_id: 'US',
+          country_probability: 0.8,
+          created_at: new Date(),
+        },
+        {
+          id: 'id-2',
+          name: 'sarah',
+          gender: 'female',
+          gender_probability: 0.95,
+          sample_size: 200,
+          age: 28,
+          age_group: 'adult',
+          country_id: 'NG',
+          country_probability: 0.85,
+          created_at: new Date(),
+        },
+      ];
+
+      const countMock = vi.fn().mockResolvedValue(2);
+      const findManyMock = vi.fn().mockResolvedValue(mockProfiles);
+      service['prisma'].profile.count = countMock;
+      service['prisma'].profile.findMany = findManyMock;
+
+      const result = await service.findAllProfiles({});
+
+      expect(result.count).toBe(2);
+      expect(result.data).toEqual(mockProfiles);
+      expect(countMock).toHaveBeenCalledWith({
+        where: {},
+      });
+      expect(findManyMock).toHaveBeenCalledWith({
+        where: {},
+        orderBy: { created_at: 'desc' },
+      });
+    });
+
+    it('should filter profiles by gender', async () => {
+      const mockProfiles = [
+        {
+          id: 'id-1',
+          name: 'peter',
+          gender: 'male',
+          gender_probability: 0.99,
+          sample_size: 100,
+          age: 42,
+          age_group: 'adult',
+          country_id: 'US',
+          country_probability: 0.8,
+          created_at: new Date(),
+        },
+      ];
+
+      const countMock = vi.fn().mockResolvedValue(1);
+      const findManyMock = vi.fn().mockResolvedValue(mockProfiles);
+      service['prisma'].profile.count = countMock;
+      service['prisma'].profile.findMany = findManyMock;
+
+      const result = await service.findAllProfiles({ gender: 'MALE' });
+
+      expect(result.count).toBe(1);
+      expect(countMock).toHaveBeenCalledWith({
+        where: { gender: 'male' },
+      });
+    });
+
+    it('should filter profiles by country_id', async () => {
+      const mockProfiles = [
+        {
+          id: 'id-1',
+          name: 'peter',
+          gender: 'male',
+          gender_probability: 0.99,
+          sample_size: 100,
+          age: 42,
+          age_group: 'adult',
+          country_id: 'US',
+          country_probability: 0.8,
+          created_at: new Date(),
+        },
+      ];
+
+      const countMock = vi.fn().mockResolvedValue(1);
+      const findManyMock = vi.fn().mockResolvedValue(mockProfiles);
+      service['prisma'].profile.count = countMock;
+      service['prisma'].profile.findMany = findManyMock;
+
+      const result = await service.findAllProfiles({ country_id: 'us' });
+
+      expect(result.count).toBe(1);
+      expect(countMock).toHaveBeenCalledWith({
+        where: { country_id: 'US' },
+      });
+    });
+
+    it('should filter profiles by age_group', async () => {
+      const mockProfiles = [
+        {
+          id: 'id-1',
+          name: 'peter',
+          gender: 'male',
+          gender_probability: 0.99,
+          sample_size: 100,
+          age: 42,
+          age_group: 'adult',
+          country_id: 'US',
+          country_probability: 0.8,
+          created_at: new Date(),
+        },
+      ];
+
+      const countMock = vi.fn().mockResolvedValue(1);
+      const findManyMock = vi.fn().mockResolvedValue(mockProfiles);
+      service['prisma'].profile.count = countMock;
+      service['prisma'].profile.findMany = findManyMock;
+
+      const result = await service.findAllProfiles({ age_group: 'adult' });
+
+      expect(result.count).toBe(1);
+      expect(countMock).toHaveBeenCalledWith({
+        where: { age_group: 'adult' },
+      });
+    });
+  });
+
+  describe('deleteProfile', () => {
+    it('should delete a profile by ID', async () => {
+      const mockProfile = {
+        id: 'test-id',
+        name: 'peter',
+        gender: 'male',
+        gender_probability: 0.99,
+        sample_size: 100,
+        age: 42,
+        age_group: 'adult',
+        country_id: 'US',
+        country_probability: 0.8,
+        created_at: new Date(),
+      };
+
+      const deleteMock = vi.fn().mockResolvedValue(mockProfile);
+      service['prisma'].profile.delete = deleteMock;
+
+      const result = await service.deleteProfile('test-id');
+
+      expect(result).toEqual(mockProfile);
+      expect(deleteMock).toHaveBeenCalledWith({
+        where: { id: 'test-id' },
+      });
+    });
   });
 
   describe('enrichProfile', () => {
