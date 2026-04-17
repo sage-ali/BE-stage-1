@@ -1,14 +1,24 @@
+databases:
+  - name: postgres
+    plan: free
+    region: oregon
+    ipAllowList: []
+
 services:
-  - type: web
-    name: hng-14-be-stage-0
-    env: node
-    buildCommand: npm install && npm run build
-    startCommand: npm start
-    plan: free # Or hobby, starter, etc.
+  - name: hng-14-be-stage-1
+    type: web
+    runtime: node
+    buildCommand: pnpm install && pnpm prisma generate && pnpm prisma db push && pnpm build
+    startCommand: pnpm start:prod
+    plan: free
     autoDeploy: true
     healthCheckPath: /health
     envVars:
       - key: PORT
-        value: "3000" # Example, Render will also inject its own PORT
+        value: "3000"
       - key: NODE_VERSION
-        value: "18.x" # Matching a recommended Node.js version
+        value: "20.x"
+      - key: DATABASE_URL
+        fromDatabase:
+          name: postgres
+          property: connectionString
